@@ -77,6 +77,8 @@ class Main:
                         # is this a valid move?
                         if board.valid_move(dragger.piece, move):
                             board.move(dragger.piece, move)
+
+                            board.set_true_en_passant(dragger.piece)
                             #show methods
                             game.show_bg(screen)
                             game.show_pieces(screen)
