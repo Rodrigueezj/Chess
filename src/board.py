@@ -65,7 +65,7 @@ class Board:
                     temp_board.calc_moves(p, row, col, False)
                     for m in p.moves:
                         if isinstance(m.final.piece, King):
-                            True
+                            return True
         return False
 
     def calc_moves(self, piece, row, col, real_or_check = True):
@@ -86,13 +86,12 @@ class Board:
                         final = Square(possible_move_row, col)
                         move = Move(initial, final)
                         
-                        #check potential checks
+                        #checking potential checks
                         if real_or_check:
                             if not self.in_check(piece, move):
                                 piece.add_move(move)
-                            else:
-                                piece.add_move(move)
-
+                        else:
+                            piece.add_move(move)
                     else: break # blocked
 
                 else: break #not in range
@@ -108,7 +107,13 @@ class Board:
                         final_piece = self.squares[possible_move_row][possible_move_col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         move = Move(initial, final)
-                        piece.add_move(move)
+
+                        #check potential checks
+                        if real_or_check:
+                            if not self.in_check(piece, move):
+                                piece.add_move(move)
+                        else:
+                            piece.add_move(move)
 
         def knight_moves():
             #8 possible moves
@@ -132,7 +137,12 @@ class Board:
                         final_piece = self.squares[possible_move_row][possible_move_col].piece
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         move = Move(initial, final)
-                        piece.add_move(move)
+                        #check potential checks
+                        if real_or_check:
+                            if not self.in_check(piece, move):
+                                piece.add_move(move)
+                            else:
+                                piece.add_move(move)
 
         def straightline_moves(incrs):
             for incr in incrs:
@@ -148,6 +158,13 @@ class Board:
                         final = Square(possible_move_row, possible_move_col, final_piece)
                         #create a possible new move
                         move = Move(initial, final)
+
+                        #check potential checks
+                        if real_or_check:
+                            if not self.in_check(piece, move):
+                                piece.add_move(move)
+                        else:
+                            piece.add_move(move)
 
                         #empty
                         if self.squares[possible_move_row][possible_move_col].isempty():
