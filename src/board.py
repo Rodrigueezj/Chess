@@ -2,6 +2,7 @@ from square import Square
 from move import Move
 from piece import *
 from const import *
+import copy
 
 class Board:
 
@@ -24,6 +25,12 @@ class Board:
         if isinstance(piece, Pawn):
             self.check_promotion(piece, final)
 
+        if isinstance(piece, King):
+            if self.castling(initial, final):
+                diff = final.col - initial.col
+                rook = piece.left_rook if (diff < 0) else piece.right_rook
+                self.move(rook, rook.moves[-1])
+
         #move
         piece.moved = True
 
@@ -42,9 +49,26 @@ class Board:
             self.squares[final.row][final.col].piece = Queen(piece.color)
 
     def castling(self, initial, final):
-        pass
+        return abs(initial.col - final.col) == 2
 
-    def calc_moves(self, piece, row, col):
+    def in_check(self, piece, move):
+        #we don't want to move our original board and pieces
+        temp_board = copy.deepcopy(self)
+        temp_piece = copy.deepcopy(piece)
+        temp_board.move(temp_piece, move)
+
+        for row in range(ROWS):
+            for col in range(COLS):
+                #we move temporary piece in temporary board in order to know if in valid moves is the adversary king
+                if temp_board.squares[row][col].has_enemy_piece(piece.color):
+                    p = temp_board.squares[row][col].piece
+                    temp_board.calc_moves(p, row, col, False)
+                    for m in p.moves:
+                        if isinstance(m.final.piece, King):
+                            True
+        return False
+
+    def calc_moves(self, piece, row, col, real_or_check = True):
         '''
         Calculate all the possible/valid moves of an especific piece on a specific position
         '''
@@ -61,8 +85,16 @@ class Board:
                         initial = Square(row, col)
                         final = Square(possible_move_row, col)
                         move = Move(initial, final)
-                        piece.add_move(move)
+                        
+                        #check potential checks
+                        if real_or_check:
+                            if not self.in_check(piece, move):
+                                piece.add_move(move)
+                            else:
+                                piece.add_move(move)
+
                     else: break # blocked
+
                 else: break #not in range
 
             #diagonal moves
@@ -72,7 +104,9 @@ class Board:
                 if Square.in_range(possible_move_row, possible_move_col):
                     if self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
                         initial = Square(row, col)
-                        final = Square(possible_move_row, possible_move_col)
+                        #this is to know which piece we're eating
+                        final_piece = self.squares[possible_move_row][possible_move_col].piece
+                        final = Square(possible_move_row, possible_move_col, final_piece)
                         move = Move(initial, final)
                         piece.add_move(move)
 
@@ -95,7 +129,8 @@ class Board:
                 if Square.in_range(possible_move_row, possible_move_col):
                     if self.squares[possible_move_row][possible_move_col].isempty_or_enemy(piece.color):
                         initial = Square(row, col)
-                        final = Square(possible_move_row, possible_move_col)
+                        final_piece = self.squares[possible_move_row][possible_move_col].piece
+                        final = Square(possible_move_row, possible_move_col, final_piece)
                         move = Move(initial, final)
                         piece.add_move(move)
 
@@ -109,7 +144,8 @@ class Board:
                     if Square.in_range(possible_move_row, possible_move_col):
                         #create squares of the possible new move
                         initial = Square(row, col)
-                        final = Square(possible_move_row, possible_move_col)
+                        final_piece = self.squares[possible_move_row][possible_move_col].piece
+                        final = Square(possible_move_row, possible_move_col, final_piece)
                         #create a possible new move
                         move = Move(initial, final)
 
@@ -117,12 +153,12 @@ class Board:
                         if self.squares[possible_move_row][possible_move_col].isempty():
                             piece.add_move(move)
                         #has enemy piece
-                        if self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
+                        elif self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
                             piece.add_move(move)
                             break
 
                         #has team piece
-                        if self.squares[possible_move_row][possible_move_col].has_team_piece(piece.color):
+                        elif self.squares[possible_move_row][possible_move_col].has_team_piece(piece.color):
                             break
 
                     else: break
@@ -154,10 +190,47 @@ class Board:
 
                 #castling
                 if not piece.moved:
-                    pass
-                #queen castling
+                    left_rook = self.squares[row][0].piece
+                    if isinstance(left_rook, Rook):
+                        if not left_rook.moved:
+                            for c in range(1,4):
+                                if self.squares[row][c].has_piece(): #castling is not possible, pieces in between
+                                    break
 
-                #king castling
+                                if c == 3:
+                                    piece.left_rook = left_rook
+
+                                    #rook move
+                                    initial = Square(row, 0)
+                                    final = Square(row, 3)
+                                    move = Move(initial, final)
+                                    left_rook.add_move(move)
+                                    #king move
+                                    initial = Square(row, col)
+                                    final = Square(row, 2)
+                                    move = Move(initial, final)
+                                    left_rook.add_move(move)
+                #queen castling
+                    right_rook = self.squares[row][7].piece
+                    if isinstance(right_rook, Rook):
+                        if not right_rook.moved:
+                            for c in range(5,7):
+                                if self.squares[row][c].has_piece(): #castling is not possible, pieces in between
+                                    break
+
+                                if c == 6:
+                                    piece.right_rook = right_rook
+
+                                    #rook move
+                                    initial = Square(row, 7)
+                                    final = Square(row, 5)
+                                    move = Move(initial, final)
+                                    right_rook.add_move(move)
+                                    #king move
+                                    initial = Square(row, col)
+                                    final = Square(row, 6)
+                                    move = Move(initial, final)
+                                    right_rook.add_move(move)
 
         if isinstance(piece, Pawn): pawn_moves()
 
