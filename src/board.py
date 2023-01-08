@@ -141,8 +141,9 @@ class Board:
                         if real_or_check:
                             if not self.in_check(piece, move):
                                 piece.add_move(move)
-                            else:
-                                piece.add_move(move)
+                            else: break
+                        else:
+                            piece.add_move(move)
 
         def straightline_moves(incrs):
             for incr in incrs:
@@ -159,19 +160,22 @@ class Board:
                         #create a possible new move
                         move = Move(initial, final)
 
-                        #check potential checks
-                        if real_or_check:
-                            if not self.in_check(piece, move):
-                                piece.add_move(move)
-                        else:
-                            piece.add_move(move)
-
                         #empty
                         if self.squares[possible_move_row][possible_move_col].isempty():
-                            piece.add_move(move)
-                        #has enemy piece
+                            #check potential checks
+                            if real_or_check:
+                                if not self.in_check(piece, move):
+                                    piece.add_move(move)
+                            else:
+                                piece.add_move(move)
+                            #has enemy piece
                         elif self.squares[possible_move_row][possible_move_col].has_enemy_piece(piece.color):
-                            piece.add_move(move)
+                            #check potential checks
+                            if real_or_check:
+                                if not self.in_check(piece, move):
+                                    piece.add_move(move)
+                            else:
+                                piece.add_move(move)
                             break
 
                         #has team piece
@@ -203,7 +207,13 @@ class Board:
                         initial = Square(row, col)
                         final = Square(possible_move_row, possible_move_col)
                         move = Move(initial, final)
-                        piece.add_move(move)
+                        #check potential checks
+                        if real_or_check:
+                            if not self.in_check(piece, move):
+                                piece.add_move(move)
+                            else: break
+                        else:
+                            piece.add_move(move)
 
                 #castling
                 if not piece.moved:
@@ -220,13 +230,21 @@ class Board:
                                     #rook move
                                     initial = Square(row, 0)
                                     final = Square(row, 3)
-                                    move = Move(initial, final)
-                                    left_rook.add_move(move)
+                                    moveR = Move(initial, final)
+                                    
                                     #king move
                                     initial = Square(row, col)
                                     final = Square(row, 2)
-                                    move = Move(initial, final)
-                                    left_rook.add_move(move)
+                                    moveK = Move(initial, final)
+                                    
+                                    if real_or_check:
+                                        if not self.in_check(piece, move)and not self.in_check(left_rook, moveR):
+                                            left_rook.add_move(moveR)
+                                            piece.add_move(moveK)
+                                    else:
+                                        left_rook.add_move(moveR)
+                                        piece.add_move(moveK)
+
                 #queen castling
                     right_rook = self.squares[row][7].piece
                     if isinstance(right_rook, Rook):
@@ -241,13 +259,20 @@ class Board:
                                     #rook move
                                     initial = Square(row, 7)
                                     final = Square(row, 5)
-                                    move = Move(initial, final)
-                                    right_rook.add_move(move)
+                                    moveR = Move(initial, final)
+                                    
                                     #king move
                                     initial = Square(row, col)
                                     final = Square(row, 6)
-                                    move = Move(initial, final)
-                                    right_rook.add_move(move)
+                                    moveK = Move(initial, final)
+                                    
+                                    if real_or_check:
+                                        if not self.in_check(piece, move)and not self.in_check(left_rook, moveR):
+                                            left_rook.add_move(moveR)
+                                            piece.add_move(moveK)
+                                    else:
+                                        left_rook.add_move(moveR)
+                                        piece.add_move(moveK)
 
         if isinstance(piece, Pawn): pawn_moves()
 
